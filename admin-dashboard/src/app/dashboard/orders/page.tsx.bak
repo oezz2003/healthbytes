@@ -1,0 +1,1035 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { 
+  EyeIcon, CheckIcon, ArrowPathIcon, XMarkIcon, 
+  TruckIcon, ClockIcon, DocumentTextIcon, InformationCircleIcon, PencilIcon, TrashIcon
+} from '@heroicons/react/24/outline';
+import { Order, OrderStatus, MenuItem, User, PaymentStatus } from '@/types';
+import { db } from '@/lib/firebase/clientApp';
+import { useOrders } from '@/lib/hooks/useOrders';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from '@/lib/firebase/firestore';
+
+// Extend OrderItem interface to include customizations
+interface OrderItem {
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  customizations?: string[];
+}
+
+// Local extension of OrderItem interface to include customizations
+interface OrderItemWithCustomizations extends OrderItem {
+  customizations?: string[];
+}
+
+// Status badge component
+const StatusBadge = ({ status }: { status: OrderStatus }) => {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'delivered':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'pending':
+        return <ClockIcon className="h-4 w-4 mr-1" />;
+      case 'processing':
+        return <ArrowPathIcon className="h-4 w-4 mr-1" />;
+      case 'completed':
+        return <CheckIcon className="h-4 w-4 mr-1" />;
+      case 'cancelled':
+        return <XMarkIcon className="h-4 w-4 mr-1" />;
+      case 'delivered':
+        return <TruckIcon className="h-4 w-4 mr-1" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <span className={`px-2 py-1 inline-flex items-center text-xs font-medium rounded-full ${getStatusColor()}`}>
+      {getStatusIcon()}
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+
+// Order details modal component
+const OrderDetailsModal = ({ 
+  order, 
+  onClose,
+  onUpdateStatus
+}: { 
+  order: Order, 
+  onClose: () => void,
+  onUpdateStatus: (orderId: string, newStatus: OrderStatus) => Promise<boolean>
+}) => {
+  const [customer, setCustomer] = useState<User | null>(null);
+  const [menuItems, setMenuItems] = useState<Record<string, MenuItem>>({});
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+
+  // Format date
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    });
+  };
+
+  // محاكاة جلب بيانات العميل وعناصر القائمة
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      try {
+        setLoading(true);
+
+        // محاكاة تأخير الشبكة
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // بيانات وهمية للعميل
+        if (order.customerId) {
+          setCustomer({
+            id: order.customerId,
+            name: order.userName || 'عميل وهمي',
+            email: `customer-${order.customerId}@example.com`,
+            phone: '0501234567',
+            address: order.address || 'عنوان وهمي',
+            role: 'Customer',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        // بيانات وهمية لعناصر القائمة
+        const itemsData: Record<string, MenuItem> = {};
+        for (const item of order.items) {
+          if (!itemsData[item.menuItemId]) {
+              itemsData[item.menuItemId] = {
+              id: item.menuItemId,
+              name: item.name,
+              description: `وصف وهمي لـ ${item.name}`,
+              price: item.price,
+              image: 'https://via.placeholder.com/150',
+              category: 'فئة وهمية',
+              nutritionalInfo: {
+                calories: 350,
+                protein: 15,
+                carbs: 40,
+                fat: 10,
+                ingredients: ['مكون 1', 'مكون 2'],
+                allergens: []
+              },
+              isAvailable: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+          }
+        }
+        setMenuItems(itemsData);
+        
+        console.log('✅ تم تحميل تفاصيل الطلب الوهمية');
+        
+      } catch (error) {
+        console.error('خطأ في جلب تفاصيل الطلب:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [order]);
+
+  // Update order status handler
+  const handleUpdateStatus = async (newStatus: OrderStatus) => {
+    try {
+      setUpdating(true);
+      // محاكاة تأخير الشبكة
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const result = await onUpdateStatus(order.id, newStatus);
+      setUpdating(false);
+      return result;
+    } catch (error) {
+      console.error('خطأ في تحديث حالة الطلب:', error);
+      setUpdating(false);
+      return false;
+    }
+  };
+
+  // Calculate order totals
+  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center">
+      <div className="relative w-full max-w-4xl mx-auto my-6">
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-gray-200">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Order #{order.orderNumber}</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Placed on {formatDate(order.createdAt)}
+              </p>
+            </div>
+            <StatusBadge status={order.status} />
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+            </div>
+          ) : (
+            <div className="p-6">
+              {/* Order and Customer Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Customer Information</h3>
+                  {customer ? (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="font-medium">{customer.name}</p>
+                      <p className="text-sm text-gray-600">{customer.email}</p>
+                      <p className="text-sm text-gray-600">{customer.phone}</p>
+                      {customer.address && <p className="text-sm text-gray-600 mt-2">{customer.address}</p>}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Customer information not available</p>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Delivery Information</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="font-medium">{order.deliveryAddress?.streetAddress || 'Address not provided'}</p>
+                    {order.deliveryAddress?.city && (
+                      <p className="text-sm text-gray-600">
+                        {order.deliveryAddress.city}, {order.deliveryAddress.state || ''} {order.deliveryAddress.zipCode || ''}
+                      </p>
+                    )}
+                    {order.deliveryNotes && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium">Delivery Notes:</p>
+                        <p className="text-sm text-gray-600">{order.deliveryNotes}</p>
+                      </div>
+                    )}
+                    {order.estimatedDeliveryTime && (
+                      <div className="mt-2 text-sm">
+                        <span className="font-medium">Estimated Delivery: </span>
+                        <span>{formatDate(order.estimatedDeliveryTime)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <h3 className="text-lg font-medium mb-3">Order Items</h3>
+              <div className="overflow-x-auto mb-6">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Item
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {order.items.map((item, index) => {
+                      const menuItem = menuItems[item.menuItemId];
+                      const itemWithCustomizations = item as OrderItemWithCustomizations;
+                      
+                      return (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {menuItem?.image ? (
+                                <img 
+                                  src={menuItem.image} 
+                                  alt={menuItem.name} 
+                                  className="h-10 w-10 rounded-full object-cover mr-3"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-gray-200 mr-3 flex items-center justify-center">
+                                  <DocumentTextIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {menuItem?.name || 'Unknown Item'}
+                                </div>
+                                {itemWithCustomizations.customizations && itemWithCustomizations.customizations.length > 0 && (
+                                  <div className="text-xs text-gray-500">
+                                    {itemWithCustomizations.customizations.join(', ')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {item.quantity}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            ${item.price.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Subtotal</span>
+                  <span className="text-sm font-medium">${subtotal.toFixed(2)}</span>
+                </div>
+                {order.tax !== undefined && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-gray-600">Tax</span>
+                    <span className="text-sm font-medium">${order.tax.toFixed(2)}</span>
+                  </div>
+                )}
+                {order.deliveryFee !== undefined && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-gray-600">Delivery Fee</span>
+                    <span className="text-sm font-medium">${order.deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+                {order.tip !== undefined && (
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-gray-600">Tip</span>
+                    <span className="text-sm font-medium">${order.tip.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between">
+                  <span className="font-medium">Total</span>
+                  <span className="font-bold text-lg">${order.totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <h3 className="text-md font-medium mb-2">Payment Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Payment Method</p>
+                    <p className="text-sm font-medium">{order.paymentMethod || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Payment Status</p>
+                    <p className="text-sm font-medium">{order.paymentStatus || 'Not specified'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col md:flex-row justify-between items-center mt-8">
+                <div className="w-full md:w-auto mb-4 md:mb-0">
+                  <div className="flex flex-wrap gap-2">
+                    {order.status !== 'processing' && (
+                      <Button
+                        variant="primary"
+                        onClick={() => handleUpdateStatus('processing')}
+                        isLoading={updating}
+                        disabled={updating || order.status === 'completed' || order.status === 'cancelled' || order.status === 'delivered'}
+                      >
+                        <ArrowPathIcon className="h-5 w-5 mr-1" />
+                        Mark as Processing
+                      </Button>
+                    )}
+                    
+                    {order.status !== 'completed' && (
+                      <Button
+                        variant="success"
+                        onClick={() => handleUpdateStatus('completed')}
+                        isLoading={updating}
+                        disabled={updating || order.status === 'cancelled' || order.status === 'delivered'}
+                      >
+                        <CheckIcon className="h-5 w-5 mr-1" />
+                        Mark as Completed
+                      </Button>
+                    )}
+                    
+                    {order.status !== 'delivered' && (
+                      <Button
+                        variant="success"
+                        onClick={() => handleUpdateStatus('delivered')}
+                        isLoading={updating}
+                        disabled={updating || order.status === 'cancelled'}
+                      >
+                        <TruckIcon className="h-5 w-5 mr-1" />
+                        Mark as Delivered
+                      </Button>
+                    )}
+                    
+                    {order.status !== 'cancelled' && (
+                      <Button
+                        variant="danger"
+                        onClick={() => handleUpdateStatus('cancelled')}
+                        isLoading={updating}
+                        disabled={updating || order.status === 'delivered'}
+                      >
+                        <XMarkIcon className="h-5 w-5 mr-1" />
+                        Cancel Order
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                <Button
+                  variant="light"
+                  onClick={onClose}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OrdersPage = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [useDemoData, setUseDemoData] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+
+  // Generate demo data function
+  const generateDemoOrders = (): Order[] => {
+    const statuses: OrderStatus[] = ['pending', 'processing', 'completed', 'delivered', 'cancelled'];
+    const paymentMethods = ['cash', 'card', 'online'];
+    const paymentStatuses: PaymentStatus[] = ['pending', 'paid', 'failed', 'refunded'];
+    
+    const demoOrders: Order[] = [];
+    
+    // Generate 25 sample orders
+    for (let i = 1; i <= 25; i++) {
+      // Generate between 1-5 items per order
+      const itemCount = Math.floor(Math.random() * 5) + 1;
+      const items: OrderItem[] = [];
+      
+      for (let j = 1; j <= itemCount; j++) {
+        const price = parseFloat((Math.random() * 15 + 5).toFixed(2));
+        const quantity = Math.floor(Math.random() * 3) + 1;
+        
+        // Create menu item
+        items.push({
+          menuItemId: `menu-item-${Math.floor(Math.random() * 20) + 1}`,
+          name: ['برجر لحم', 'بيتزا مارجريتا', 'شاورما دجاج', 'سلطة يونانية', 'باستا كاربونارا', 'كبسة دجاج'][Math.floor(Math.random() * 6)],
+          price: price,
+          quantity: quantity
+        });
+      }
+      
+      // Calculate total amount
+      const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const tax = parseFloat((subtotal * 0.15).toFixed(2)); // 15% tax
+      const deliveryFee = parseFloat((Math.random() * 5 + 3).toFixed(2));
+      const tip = Math.random() > 0.7 ? parseFloat((Math.random() * 5).toFixed(2)) : 0;
+      const totalAmount = parseFloat((subtotal + tax + deliveryFee + tip).toFixed(2));
+      
+      // Generate random dates within the last 30 days
+      const daysAgo = Math.floor(Math.random() * 30);
+      const createdAt = new Date();
+      createdAt.setDate(createdAt.getDate() - daysAgo);
+      createdAt.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60));
+      
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      
+      // Generate random delivery time
+      const estimatedDeliveryTime = new Date(createdAt);
+      estimatedDeliveryTime.setMinutes(estimatedDeliveryTime.getMinutes() + 30 + Math.floor(Math.random() * 60));
+      
+      demoOrders.push({
+        id: `order-${i}`,
+        orderNumber: 1000 + i,
+        customerId: `customer-${Math.floor(Math.random() * 10) + 1}`,
+        userName: ['أحمد محمد', 'فاطمة علي', 'خالد عبدالله', 'مريم سعيد', 'عمر يوسف'][Math.floor(Math.random() * 5)],
+        items: items,
+        status: status,
+        totalAmount: totalAmount,
+        total: totalAmount,
+        tax: tax,
+        deliveryFee: deliveryFee,
+        tip: tip,
+        paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)] as 'cash' | 'card' | 'online',
+        paymentStatus: paymentStatuses[Math.floor(Math.random() * paymentStatuses.length)],
+        deliveryAddress: {
+          streetAddress: [`شارع الملك فهد، حي ${Math.floor(Math.random() * 100) + 1}`, 'شارع التحلية، حي الورود', 'شارع الأمير سلطان، حي النخيل'][Math.floor(Math.random() * 3)],
+          city: ['الرياض', 'جدة', 'الدمام', 'مكة'][Math.floor(Math.random() * 4)],
+          state: 'المملكة العربية السعودية',
+          zipCode: `${Math.floor(Math.random() * 90000) + 10000}`
+        },
+        deliveryNotes: Math.random() > 0.7 ? 'الرجاء الاتصال عند الوصول' : undefined,
+        estimatedDeliveryTime: estimatedDeliveryTime.toISOString(),
+        createdAt: createdAt.toISOString(),
+        updatedAt: createdAt.toISOString()
+      });
+    }
+    
+    // Sort by created date, newest first
+    return demoOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  // Load orders with demo data
+  useEffect(() => {
+    setLoading(true);
+    
+    // Use demo data
+    const demoOrders = generateDemoOrders();
+    setOrders(demoOrders);
+    setLoading(false);
+    
+  }, [useDemoData]);
+
+  // Filter orders based on selected status and search term
+  useEffect(() => {
+    let result = orders;
+    
+    // Filter by status
+    if (selectedStatus !== 'all') {
+      result = result.filter(order => order.status === selectedStatus);
+    }
+    
+    // Filter by search term (order number, customer ID, or customer name)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(order => 
+        order.orderNumber.toString().toLowerCase().includes(term) || 
+        (order.customerId && order.customerId.toLowerCase().includes(term)) ||
+        (order.userName && order.userName.toLowerCase().includes(term))
+      );
+    }
+    
+    setFilteredOrders(result);
+  }, [orders, selectedStatus, searchTerm]);
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Handle status update
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      // Update demo data
+      setOrders(orders.map(order => {
+        if (order.id === orderId) {
+          return { 
+            ...order, 
+            status: newStatus,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return order;
+      }));
+      return true;
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      setError('Failed to update order status.');
+      return false;
+    }
+  };
+
+  // View order details
+  const handleViewOrder = (order: Order) => {
+    setViewingOrder(order);
+    setIsViewModalOpen(true);
+  };
+
+  // Edit order
+  const handleEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle updating an order
+  const handleUpdateOrder = async (orderData: Partial<Order>) => {
+    try {
+      if (!editingOrder) return false;
+      
+      // Update demo data
+      const updatedOrders = orders.map(order => 
+        order.id === editingOrder.id 
+          ? { ...order, ...orderData, updatedAt: new Date().toISOString() } 
+          : order
+      );
+      
+      setOrders(updatedOrders);
+      setIsEditModalOpen(false);
+      setEditingOrder(null);
+      return true;
+    } catch (err) {
+      console.error('Error updating order:', err);
+      setError('فشل في تحديث الطلب.');
+      return false;
+    }
+  };
+
+  // Handle deleting an order
+  const handleDeleteOrder = async () => {
+    try {
+      if (!orderToDelete) return false;
+      
+      // Remove from demo data
+      setOrders(orders.filter(order => order.id !== orderToDelete.id));
+      setIsDeleteModalOpen(false);
+      setOrderToDelete(null);
+      return true;
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      setError('فشل في حذف الطلب.');
+      return false;
+    }
+  };
+
+  // Toggle between real data and demo data
+  const toggleDemoData = () => {
+    setUseDemoData(!useDemoData);
+  };
+
+  return (
+    <DashboardLayout title="Orders">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">إدارة الطلبات</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            عرض وإدارة جميع طلبات العملاء
+          </p>
+        </div>
+        
+        <div className="flex items-center mt-4 md:mt-0">
+          {/* Toggle Demo Data */}
+          <div className="mr-4 flex items-center">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={useDemoData} 
+                onChange={toggleDemoData} 
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+            <span className="mr-3 text-sm font-medium text-gray-900">استخدام بيانات تجريبية</span>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="w-full md:w-64">
+            <input
+              type="text"
+              placeholder="البحث برقم الطلب أو اسم العميل..."
+              className="w-full p-2 border border-gray-300 rounded-lg"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Status Filter */}
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={selectedStatus === 'all' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('all')}
+          >
+            كل الطلبات
+          </Button>
+          <Button
+            variant={selectedStatus === 'pending' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('pending')}
+          >
+            <ClockIcon className="h-4 w-4 ml-1" />
+            قيد الانتظار
+          </Button>
+          <Button
+            variant={selectedStatus === 'processing' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('processing')}
+          >
+            <ArrowPathIcon className="h-4 w-4 ml-1" />
+            جاري التحضير
+          </Button>
+          <Button
+            variant={selectedStatus === 'completed' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('completed')}
+          >
+            <CheckIcon className="h-4 w-4 ml-1" />
+            مكتمل
+          </Button>
+          <Button
+            variant={selectedStatus === 'delivered' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('delivered')}
+          >
+            <TruckIcon className="h-4 w-4 ml-1" />
+            تم التوصيل
+          </Button>
+          <Button
+            variant={selectedStatus === 'cancelled' ? 'primary' : 'light'}
+            size="sm"
+            onClick={() => setSelectedStatus('cancelled')}
+          >
+            <XMarkIcon className="h-4 w-4 ml-1" />
+            ملغي
+          </Button>
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+        </div>
+      ) : error ? (
+        <Card className="bg-red-50 border-red-200">
+          <p className="text-red-600">{error}</p>
+        </Card>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          {filteredOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      رقم الطلب
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      العميل
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      التاريخ
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الحالة
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      العناصر
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      المجموع
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الإجراءات
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{order.orderNumber}#</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{order.userName || 'عميل غير معروف'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{formatDate(order.createdAt)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <StatusBadge status={order.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm text-gray-900">
+                          {order.items.reduce((sum, item) => sum + item.quantity, 0)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                        {order.totalAmount.toFixed(2)} ريال
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            variant="light"
+                            size="sm"
+                            onClick={() => handleViewOrder(order)}
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Button>
+                            <Button
+                            variant="light"
+                              size="sm"
+                            onClick={() => handleEditOrder(order)}
+                            >
+                            <PencilIcon className="h-4 w-4" />
+                            </Button>
+                            <Button
+                            variant="light"
+                              size="sm"
+                            onClick={() => {
+                              setOrderToDelete(order);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            >
+                            <TrashIcon className="h-4 w-4" />
+                            </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <InformationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">لا توجد طلبات</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                {selectedStatus !== 'all'
+                  ? `لا توجد طلبات بحالة ${selectedStatus}.`
+                  : searchTerm
+                  ? 'لا توجد طلبات تطابق معايير البحث.'
+                  : 'لا توجد طلبات في النظام حتى الآن.'}
+              </p>
+              {!useDemoData && (
+                <Button
+                  variant="primary"
+                  className="mt-4"
+                  onClick={toggleDemoData}
+                >
+                  إظهار بيانات تجريبية
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Order Details Modal */}
+      {isViewModalOpen && viewingOrder && (
+        <OrderDetailsModal
+          order={viewingOrder}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setViewingOrder(null);
+          }}
+          onUpdateStatus={handleUpdateOrderStatus}
+        />
+      )}
+
+      {/* Order Edit Modal */}
+      {isEditModalOpen && editingOrder && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="relative w-full max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">
+                  تعديل الطلب #{editingOrder.orderNumber}
+                </h3>
+              </div>
+              <div className="p-6">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const formData = new FormData(form);
+                  
+                  const orderData: Partial<Order> = {
+                    status: formData.get('status') as OrderStatus,
+                    paymentStatus: formData.get('paymentStatus') as PaymentStatus,
+                    deliveryNotes: formData.get('deliveryNotes') as string,
+                    deliveryAddress: {
+                      streetAddress: formData.get('streetAddress') as string,
+                      city: formData.get('city') as string,
+                      state: formData.get('state') as string,
+                      zipCode: formData.get('zipCode') as string,
+                    }
+                  };
+                  
+                  handleUpdateOrder(orderData);
+                }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">حالة الطلب *</label>
+                      <select
+                        name="status"
+                        defaultValue={editingOrder.status}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
+                      >
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="processing">جاري التحضير</option>
+                        <option value="completed">مكتمل</option>
+                        <option value="delivered">تم التوصيل</option>
+                        <option value="cancelled">ملغي</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">حالة الدفع *</label>
+                      <select
+                        name="paymentStatus"
+                        defaultValue={editingOrder.paymentStatus}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        required
+                      >
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="paid">مدفوع</option>
+                        <option value="failed">فشل</option>
+                        <option value="refunded">مسترجع</option>
+                      </select>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">عنوان التوصيل *</label>
+                      <input
+                        type="text"
+                        name="streetAddress"
+                        defaultValue={editingOrder.deliveryAddress?.streetAddress || ''}
+                        className="w-full p-2 border border-gray-300 rounded mb-2"
+                        required
+                      />
+                      
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          name="city"
+                          placeholder="المدينة"
+                          defaultValue={editingOrder.deliveryAddress?.city || ''}
+                          className="w-full p-2 border border-gray-300 rounded"
+                        />
+                        <input
+                          type="text"
+                          name="state"
+                          placeholder="المنطقة"
+                          defaultValue={editingOrder.deliveryAddress?.state || ''}
+                          className="w-full p-2 border border-gray-300 rounded"
+                        />
+                        <input
+                          type="text"
+                          name="zipCode"
+                          placeholder="الرمز البريدي"
+                          defaultValue={editingOrder.deliveryAddress?.zipCode || ''}
+                          className="w-full p-2 border border-gray-300 rounded"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ملاحظات التوصيل</label>
+                      <textarea
+                        name="deliveryNotes"
+                        defaultValue={editingOrder.deliveryNotes || ''}
+                        rows={3}
+                        className="w-full p-2 border border-gray-300 rounded"
+                      ></textarea>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="light"
+                      onClick={() => {
+                        setIsEditModalOpen(false);
+                        setEditingOrder(null);
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                    >
+                      تحديث الطلب
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="relative w-full max-w-md mx-auto">
+            <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">تأكيد الحذف</h3>
+              </div>
+              <div className="p-6">
+                <p className="mb-4">هل أنت متأكد من حذف الطلب رقم #{orderToDelete?.orderNumber}؟</p>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="light"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                      setOrderToDelete(null);
+                    }}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={handleDeleteOrder}
+                  >
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default OrdersPage; 
