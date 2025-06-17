@@ -149,9 +149,8 @@ const generateMockSalesData = () => {
 
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
-  // Convert USD to EGP (multiply by 30) and format as EGP
-  const egpAmount = amount * 30;
-  return `${egpAmount.toFixed(2)} EGP`;
+  // Display the price as is in EGP without multiplication
+  return `${amount.toFixed(2)} EGP`;
 };
 
 // Helper function to format date
@@ -311,7 +310,7 @@ const MenuItemsPage = () => {
       const newItem = {
         ...itemData,
         image: imageUrl || 'https://via.placeholder.com/500',
-        isAvailable: true,
+        isAvailable: itemData.isAvailable !== undefined ? itemData.isAvailable : true,
       };
       
       const response = await fetch('/api/menuItems', {
@@ -333,14 +332,9 @@ const MenuItemsPage = () => {
         throw new Error(data.error || 'Failed to add menu item');
       }
       
-      // Refresh the menu items list
-      const updatedResponse = await fetch('/api/menuItems');
-      const updatedData = await updatedResponse.json();
-      
-      if (updatedData.success) {
-        setMenuItems(updatedData.data);
-        setFilteredItems(updatedData.data);
-      }
+      // Add the new item to the state
+      setMenuItems(prevItems => [...prevItems, data.data]);
+      setFilteredItems(prevItems => [...prevItems, data.data]);
       
       // Add sales data for the new item
       const newSalesData = {
@@ -353,6 +347,7 @@ const MenuItemsPage = () => {
       setSalesData(prevData => [...prevData, newSalesData]);
       setIsFormModalOpen(false);
       setImageUrl('');
+      setFormData({});
       return true;
     } catch (err) {
       console.error('Error adding menu item:', err);
@@ -365,15 +360,17 @@ const MenuItemsPage = () => {
     try {
       if (!editingItem) return false;
       
-      const response = await fetch(`/api/menuItems/${editingItem.id}`, {
-        method: 'PATCH',
+      const updatedItem = {
+        ...itemData,
+        image: imageUrl || editingItem.image,
+      };
+      
+      const response = await fetch(`/api/menuItems?id=${editingItem.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...itemData,
-          image: imageUrl || editingItem.image,
-        }),
+        body: JSON.stringify(updatedItem),
       });
       
       if (!response.ok) {
@@ -387,18 +384,27 @@ const MenuItemsPage = () => {
         throw new Error(data.error || 'Failed to update menu item');
       }
       
-      // Refresh the menu items list
-      const updatedResponse = await fetch('/api/menuItems');
-      const updatedData = await updatedResponse.json();
+      // Update the item in the state
+      setMenuItems(prevItems => 
+        prevItems.map(item => 
+          item.id === editingItem.id 
+            ? data.data
+            : item
+        )
+      );
       
-      if (updatedData.success) {
-        setMenuItems(updatedData.data);
-        setFilteredItems(updatedData.data);
-      }
+      setFilteredItems(prevItems => 
+        prevItems.map(item => 
+          item.id === editingItem.id 
+            ? data.data
+            : item
+        )
+      );
       
       setIsFormModalOpen(false);
       setEditingItem(null);
       setImageUrl('');
+      setFormData({});
       return true;
     } catch (err) {
       console.error('Error updating menu item:', err);
@@ -440,7 +446,7 @@ const MenuItemsPage = () => {
     try {
       if (!itemToDelete) return false;
       
-      const response = await fetch(`/api/menuItems/${itemToDelete.id}`, {
+      const response = await fetch(`/api/menuItems?id=${itemToDelete.id}`, {
         method: 'DELETE',
       });
       
@@ -456,18 +462,11 @@ const MenuItemsPage = () => {
       }
       
       // Update local state
-      const updatedItems = menuItems.filter(item => item.id !== itemToDelete.id);
-      setMenuItems(updatedItems);
-      setFilteredItems(updatedItems.filter(item => 
-        (!selectedCategory || item.category === selectedCategory) &&
-        (!searchTerm || 
-          item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-          item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      ));
+      setMenuItems(prevItems => prevItems.filter(item => item.id !== itemToDelete.id));
+      setFilteredItems(prevItems => prevItems.filter(item => item.id !== itemToDelete.id));
       
       // Remove sales data for the deleted item
-      const updatedSalesData = salesData.filter(data => data.id !== itemToDelete.id);
-      setSalesData(updatedSalesData);
+      setSalesData(prevData => prevData.filter(data => data.id !== itemToDelete.id));
 
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
@@ -773,7 +772,7 @@ const MenuItemsPage = () => {
                             type="text"
                             value={formData.name || ''}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             required
                           />
                         </div>
@@ -784,7 +783,7 @@ const MenuItemsPage = () => {
                             type="text"
                             value={formData.category || ''}
                             onChange={(e) => setFormData({...formData, category: e.target.value})}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             required
                           />
                         </div>
@@ -797,7 +796,7 @@ const MenuItemsPage = () => {
                             min="0"
                             value={formData.price || ''}
                             onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             required
                           />
                         </div>
@@ -807,7 +806,7 @@ const MenuItemsPage = () => {
                           <select
                             value={formData.isAvailable !== undefined ? (formData.isAvailable ? 'available' : 'unavailable') : ''}
                             onChange={(e) => setFormData({...formData, isAvailable: e.target.value === 'available'})}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             required
                           >
                             <option value="">Select status</option>
@@ -821,7 +820,7 @@ const MenuItemsPage = () => {
                           <textarea
                             value={formData.description || ''}
                             onChange={(e) => setFormData({...formData, description: e.target.value})}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             rows={3}
                           ></textarea>
                         </div>
@@ -861,7 +860,7 @@ const MenuItemsPage = () => {
                                 calories: parseInt(e.target.value) || 0
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                           />
                         </div>
                         
@@ -885,7 +884,7 @@ const MenuItemsPage = () => {
                                 protein: parseInt(e.target.value) || 0
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                           />
                         </div>
                         
@@ -909,7 +908,7 @@ const MenuItemsPage = () => {
                                 carbs: parseInt(e.target.value) || 0
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                           />
                         </div>
                         
@@ -933,7 +932,7 @@ const MenuItemsPage = () => {
                                 fat: parseInt(e.target.value) || 0
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                           />
                         </div>
                         
@@ -956,7 +955,7 @@ const MenuItemsPage = () => {
                                 ingredients: e.target.value.split(',').map(i => i.trim()).filter(Boolean)
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             placeholder="Beef patty, Lettuce, Tomato, Onion, Special sauce"
                           />
                         </div>
@@ -980,7 +979,7 @@ const MenuItemsPage = () => {
                                 allergens: e.target.value.split(',').map(i => i.trim()).filter(Boolean)
                               }
                             })}
-                            className="w-full p-2 border border-gray-300 rounded-lg"
+                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
                             placeholder="Gluten, Dairy, Egg"
                           />
                         </div>

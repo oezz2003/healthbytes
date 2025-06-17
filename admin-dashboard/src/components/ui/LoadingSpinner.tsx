@@ -25,16 +25,16 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     xl: 'h-16 w-16 border-4',
   };
 
-  // Determine color based on selected option
+  // Determine color based on selected option - تحديث الألوان لتتوافق مع النظام الجديد
   const colorClasses = {
-    primary: 'border-primary-500',
-    secondary: 'border-secondary-500',
-    success: 'border-green-500',
-    danger: 'border-red-500',
-    warning: 'border-yellow-500',
-    info: 'border-blue-500',
-    light: 'border-gray-300',
-    dark: 'border-gray-800',
+    primary: 'border-primary-600',
+    secondary: 'border-secondary-600',
+    success: 'border-green-600',
+    danger: 'border-red-600',
+    warning: 'border-yellow-600',
+    info: 'border-blue-600',
+    light: 'border-neutral-300',
+    dark: 'border-neutral-800',
   };
 
   // Use cn function to merge classes

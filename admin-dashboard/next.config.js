@@ -15,16 +15,12 @@ const nextConfig = {
   },
   // تكوينات إضافية
   images: {
-    domains: ['firebasestorage.googleapis.com', 'example.com'],
+    domains: ['firebasestorage.googleapis.com', 'example.com', 'images.unsplash.com'],
   },
   // تمكين JIT mode لـ Tailwind CSS
   experimental: {
     optimizeCss: true
   },
-  // إضافة دعم CSS modules
-  cssModules: true,
-  // تعطيل تحسين الصور لتجنب المشاكل
-  swcMinify: true,
 };
 
 module.exports = nextConfig; 

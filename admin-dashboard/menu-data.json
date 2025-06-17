@@ -1,0 +1,151 @@
+{
+  "menu_title": "Healthy Meals for Athletes – Nutritious and Balanced Options",
+  "footer": "Powered by FitFuel Pro – Fuel Your Performance",
+  "meals": [
+    {
+      "name": "Greek Yogurt Power Bowl",
+      "category": "breakfast",
+      "calories": 380,
+      "protein": 32,
+      "carbs": 42,
+      "ingredients": [
+        "Greek yogurt (100g 200g40g)",
+        "Mixed berries (500g0g 200g40g)",
+        "Honey (100g 100g500gg)",
+        "Chia seeds (100g 100g500gg)",
+        "Almonds (100g0 whole)"
+      ]
+    },
+    {
+      "name": "Avocado Toast with Eggs",
+      "category": "breakfast",
+      "calories": 420,
+      "protein": 22,
+      "carbs": 35,
+      "ingredients": [
+        "Whole-grain bread (200g slices)",
+        "Avocado (100g, mashed)",
+        "Poached eggs (200g)",
+        "Cherry tomatoes (500g)",
+        "Red pepper flakes (100gg)"
+      ]
+    },
+    {
+      "name": "Oatmeal Protein Pancakes",
+      "category": "breakfast",
+      "calories": 360,
+      "protein": 28,
+      "carbs": 45,
+      "ingredients": [
+        "Rolled oats (500g0g 200g40g)",
+        "Egg whites (300g)",
+        "Banana (100g, mashed)",
+        "Protein powder (100g 300g0g)",
+        "Blueberries (200g500gg 200g40g)"
+      ]
+    },
+    {
+      "name": "Spinach & Feta Omelette",
+      "category": "breakfast",
+      "calories": 320,
+      "protein": 26,
+      "carbs": 8,
+      "ingredients": [
+        "Eggs (300g)",
+        "Spinach (100g 200g40g)",
+        "Feta cheese (300g0g)",
+        "Olive oil (100g 500gg)",
+        "Red onion (200g500gg, diced)"
+      ]
+    },
+    {
+      "name": "Quinoa Breakfast Bowl",
+      "category": "breakfast",
+      "calories": 410,
+      "protein": 18,
+      "carbs": 62,
+      "ingredients": [
+        "Cooked quinoa (100g 200g40g)",
+        "Almond milk (500g0g 200g40g)",
+        "Apple (500g0g, diced)",
+        "Walnuts (200g 100g500gg)",
+        "Cinnamon (100g 500gg)"
+      ]
+    },
+    {
+      "name": "Turkey & Avocado Wrap",
+      "category": "lunch",
+      "calories": 460,
+      "protein": 38,
+      "carbs": 40,
+      "ingredients": [
+        "Whole wheat tortilla (100g large)",
+        "Turkey slices (100g00g)",
+        "Avocado (500g0g, mashed)",
+        "Spinach (100g 200g40g)",
+        "Hummus (200g 100g500gg)",
+        "Red bell pepper strips (200g500gg 200g40g)"
+      ]
+    },
+    {
+      "name": "Mediterranean Tuna Salad",
+      "category": "lunch",
+      "calories": 450,
+      "protein": 35,
+      "carbs": 30,
+      "ingredients": [
+        "Tuna in water (100g can, drained)",
+        "Mixed greens (200g 200g40gs)",
+        "Cucumber (500g0g, sliced)",
+        "Kalamata olives (200g500gg 200g40g)",
+        "Feta cheese (300g0g)",
+        "Olive oil & lemon dressing (100g 100g500gg)"
+      ]
+    },
+    {
+      "name": "Black Bean & Quinoa Stuffed Peppers",
+      "category": "dinner",
+      "calories": 420,
+      "protein": 24,
+      "carbs": 62,
+      "ingredients": [
+        "Bell peppers (200g)",
+        "Black beans (500g0g 200g40g)",
+        "Quinoa (500g0g 200g40g)",
+        "Corn (200g500gg 200g40g)",
+        "Mexican spices (100g 500gg)",
+        "Greek yogurt topping (200g 100g500gg)"
+      ]
+    },
+    {
+      "name": "Protein-Packed Energy Balls",
+      "category": "snack",
+      "calories": 220,
+      "protein": 12,
+      "carbs": 22,
+      "ingredients": [
+        "Rolled oats (500g0g 200g40g)",
+        "Whey protein (100g 300g0g)",
+        "Almond butter (200g 100g500gg)",
+        "Honey (100g 100g500gg)",
+        "Dark chocolate chips (100g 100g500gg)"
+      ]
+    },
+    {
+      "name": "Electrolyte Hydration Drink",
+      "category": "drink",
+      "calories": 50,
+      "protein": 0,
+      "carbs": 12,
+      "ingredients": [
+        "Coconut water (100g 200g40g)",
+        "Lime juice (100g 100g500gg)",
+        "Himalayan pink salt (200g500gg 500gg)",
+        "Raw honey (100g 500gg)"
+      ]
+    }
+  ],
+  "total_meals": 10,
+  "measurement_system": "grams",
+  "nutrition_notes": "All measurements converted to grams for precision. Macronutrient values based on standard food databases."
+} 

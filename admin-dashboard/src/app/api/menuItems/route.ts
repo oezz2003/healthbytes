@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, storage, firebaseAdmin } from '@/lib/firebase/adminApi';
+import { MenuItem } from "@/types";
 
 // ✅ Helper response functions
 const successResponse = (data?: any, status = 200) =>
@@ -25,31 +26,40 @@ export async function GET(req: NextRequest) {
 // ✅ POST: Create a new menu item
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const menuItem: Partial<MenuItem> = await req.json();
 
-    const {
-      name,
-      description,
-      price,
-      ingredients,
-      imageUrl = "",
-      createdAt = Date.now(),
-    } = body;
-
-    if (!name || !price || !Array.isArray(ingredients)) {
-      return errorResponse("Missing required fields: name, price, ingredients", 400);
+    // Validate required fields
+    if (!menuItem.name || !menuItem.price || !menuItem.category) {
+      return errorResponse("Missing required fields: name, price, category", 400);
     }
 
-    const docRef = await db.collection("menuItems").add({
-      name,
-      description,
-      price,
-      ingredients,
-      imageUrl,
-      createdAt,
-    });
+    // Create a new menu item with proper structure
+    const newMenuItem = {
+      name: menuItem.name,
+      description: menuItem.description || "",
+      price: menuItem.price,
+      image: menuItem.image || "",
+      category: menuItem.category,
+      nutritionalInfo: menuItem.nutritionalInfo || {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        ingredients: [],
+        allergens: []
+      },
+      isAvailable: menuItem.isAvailable !== undefined ? menuItem.isAvailable : true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-    return successResponse({ id: docRef.id });
+    const docRef = await db.collection("menuItems").add(newMenuItem);
+    
+    // Return the created item with its ID
+    return successResponse({
+      id: docRef.id,
+      ...newMenuItem
+    });
   } catch (error: any) {
     return errorResponse(error.message || "Error creating menu item");
   }
@@ -58,15 +68,33 @@ export async function POST(req: NextRequest) {
 // ✅ PUT: Update existing menu item
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { id, ...updates } = body;
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const updates: Partial<MenuItem> = await req.json();
 
     if (!id) return errorResponse("Missing menu item ID", 400);
 
+    // Validate the menu item exists
     const docRef = db.collection("menuItems").doc(id);
-    await docRef.update({ ...updates });
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      return errorResponse("Menu item not found", 404);
+    }
 
-    return successResponse({ message: "Menu item updated" });
+    // Add updated timestamp
+    updates.updatedAt = new Date().toISOString();
+
+    await docRef.update(updates);
+
+    // Get the updated document
+    const updatedDoc = await docRef.get();
+    const updatedMenuItem = {
+      id: updatedDoc.id,
+      ...updatedDoc.data()
+    };
+
+    return successResponse(updatedMenuItem);
   } catch (error: any) {
     return errorResponse(error.message || "Error updating menu item");
   }
@@ -75,14 +103,22 @@ export async function PUT(req: NextRequest) {
 // ✅ DELETE: Delete menu item
 export async function DELETE(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { id } = body;
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
 
     if (!id) return errorResponse("Missing menu item ID", 400);
 
-    await db.collection("menuItems").doc(id).delete();
+    // Validate the menu item exists
+    const docRef = db.collection("menuItems").doc(id);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      return errorResponse("Menu item not found", 404);
+    }
 
-    return successResponse({ message: "Menu item deleted" });
+    await docRef.delete();
+
+    return successResponse({ message: "Menu item deleted successfully", id });
   } catch (error: any) {
     return errorResponse(error.message || "Error deleting menu item");
   }

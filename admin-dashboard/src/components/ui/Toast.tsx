@@ -54,7 +54,7 @@ const Toast: React.FC<ToastProps> = ({
           icon: <CheckCircleIcon className="h-6 w-6" />,
           background: 'bg-green-50',
           border: 'border-green-200',
-          iconColor: 'text-green-500',
+          iconColor: 'text-success',
           titleColor: 'text-green-800',
           textColor: 'text-green-700'
         };
@@ -63,7 +63,7 @@ const Toast: React.FC<ToastProps> = ({
           icon: <XCircleIcon className="h-6 w-6" />,
           background: 'bg-red-50',
           border: 'border-red-200',
-          iconColor: 'text-red-500',
+          iconColor: 'text-error',
           titleColor: 'text-red-800',
           textColor: 'text-red-700'
         };
@@ -72,7 +72,7 @@ const Toast: React.FC<ToastProps> = ({
           icon: <ExclamationCircleIcon className="h-6 w-6" />,
           background: 'bg-yellow-50',
           border: 'border-yellow-200',
-          iconColor: 'text-yellow-500',
+          iconColor: 'text-warning',
           titleColor: 'text-yellow-800',
           textColor: 'text-yellow-700'
         };
@@ -82,7 +82,7 @@ const Toast: React.FC<ToastProps> = ({
           icon: <InformationCircleIcon className="h-6 w-6" />,
           background: 'bg-blue-50',
           border: 'border-blue-200',
-          iconColor: 'text-blue-500',
+          iconColor: 'text-info',
           titleColor: 'text-blue-800',
           textColor: 'text-blue-700'
         };
@@ -113,7 +113,7 @@ const Toast: React.FC<ToastProps> = ({
         <div className="ml-4 flex flex-shrink-0">
           <button
             type="button"
-            className="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none"
+            className="inline-flex text-neutral-400 hover:text-neutral-500 focus:outline-none"
             onClick={handleClose}
           >
             <span className="sr-only">Close</span>

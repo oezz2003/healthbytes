@@ -79,7 +79,7 @@ const SettingsPage = () => {
                       type="text"
                       name="restaurantName"
                       id="restaurantName"
-                      defaultValue="Food App Restaurant"
+                      defaultValue="HealthyBites Restaurant"
                       className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                     />
                   </div>
@@ -795,7 +795,7 @@ const SettingsPage = () => {
                         type="text"
                         name="restaurant-name"
                         id="restaurant-name"
-                        defaultValue="Food App Restaurant"
+                        defaultValue="HealthyBites Restaurant"
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                       />
                     </div>
@@ -879,7 +879,7 @@ const SettingsPage = () => {
                         type="email"
                         name="contact-email"
                         id="contact-email"
-                        defaultValue="contact@foodapp.com"
+                        defaultValue="contact@healthybites.com"
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                       />
                     </div>
@@ -909,7 +909,7 @@ const SettingsPage = () => {
                         type="url"
                         name="website"
                         id="website"
-                        defaultValue="https://foodapp.com"
+                        defaultValue="https://healthybites.com"
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                       />
                     </div>
@@ -924,7 +924,7 @@ const SettingsPage = () => {
                         type="text"
                         name="social-media"
                         id="social-media"
-                        defaultValue="@foodapp"
+                        defaultValue="@healthybites"
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
                       />
                     </div>
@@ -1488,7 +1488,7 @@ const SettingsPage = () => {
                     </div>
                     <div className="prose prose-sm max-w-none text-gray-500">
                       <p>
-                        Welcome to Food App! These Terms of Service govern your use of our website and services.
+                        Welcome to HealthyBites! These Terms of Service govern your use of our website and services.
                         By accessing or using our service, you agree to be bound by these Terms.
                       </p>
                       <h6 className="text-sm font-medium text-gray-700 mt-2">1. Use of Service</h6>
@@ -1513,7 +1513,7 @@ const SettingsPage = () => {
                         name="terms-editor"
                         rows={8}
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-                        defaultValue="Welcome to Food App! These Terms of Service govern your use of our website and services. By accessing or using our service, you agree to be bound by these Terms.
+                        defaultValue="Welcome to HealthyBites! These Terms of Service govern your use of our website and services. By accessing or using our service, you agree to be bound by these Terms.
 
 1. Use of Service
 You agree to use the service only for lawful purposes and in accordance with these Terms. You are responsible for maintaining the confidentiality of your account information.
@@ -1539,7 +1539,7 @@ You retain all rights to any content you submit, post or display on or through t
                     </div>
                     <div className="prose prose-sm max-w-none text-gray-500">
                       <p>
-                        This Privacy Policy describes how Food App collects, uses, and discloses your personal information.
+                        This Privacy Policy describes how HealthyBites collects, uses, and discloses your personal information.
                       </p>
                       <h6 className="text-sm font-medium text-gray-700 mt-2">1. Information We Collect</h6>
                       <p>
@@ -1563,7 +1563,7 @@ You retain all rights to any content you submit, post or display on or through t
                         name="privacy-editor"
                         rows={8}
                         className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-                        defaultValue="This Privacy Policy describes how Food App collects, uses, and discloses your personal information.
+                        defaultValue="This Privacy Policy describes how HealthyBites collects, uses, and discloses your personal information.
 
 1. Information We Collect
 We collect information you provide directly to us, such as your name, email address, and payment information. We also automatically collect certain information when you use our service.

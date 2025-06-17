@@ -423,9 +423,9 @@ const UsersPage = () => {
     <DashboardLayout title="Users">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">المستخدمين</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <p className="mt-1 text-sm text-gray-500">
-            إدارة جميع المستخدمين في النظام
+            Manage all users in the system
           </p>
         </div>
         <Button
@@ -437,7 +437,7 @@ const UsersPage = () => {
             setIsFormModalOpen(true);
           }}
         >
-          إضافة مستخدم جديد
+          Add New User
         </Button>
       </div>
 
@@ -641,7 +641,7 @@ const UsersPage = () => {
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingUser ? 'تعديل المستخدم' : 'إضافة مستخدم جديد'}
+                  {editingUser ? 'Edit User' : 'Add New User'}
                 </h3>
               </div>
               <div className="p-6">
@@ -665,10 +665,10 @@ const UsersPage = () => {
           <div className="relative w-full max-w-md mx-auto">
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">تأكيد الحذف</h3>
+                <h3 className="text-lg font-medium text-gray-900">Confirm Delete</h3>
               </div>
               <div className="p-6">
-                <p className="mb-4">هل أنت متأكد من حذف "{userToDelete?.name}"؟</p>
+                <p className="mb-4">Are you sure you want to delete "{userToDelete?.name}"?</p>
                 <div className="flex justify-end space-x-2">
                   <Button
                     type="button"
@@ -678,14 +678,14 @@ const UsersPage = () => {
                       setUserToDelete(null);
                     }}
                   >
-                    إلغاء
+                    Cancel
                   </Button>
                   <Button
                     type="button"
                     variant="danger"
                     onClick={handleDeleteUser}
                   >
-                    حذف
+                    Delete
                   </Button>
                 </div>
               </div>

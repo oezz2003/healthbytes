@@ -99,15 +99,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onClose }) => {
         <li key={item.name}>
           <Link 
             href={item.href}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
+            className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors shadow-sm ${
               isActive
-                ? 'bg-primary-100 text-primary-700'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-green-100 text-green-700 border border-green-200'
+                : 'text-neutral-700 hover:bg-green-50 hover:text-green-700 hover:shadow-md hover:border hover:border-green-200'
             }`}
             onClick={isMobile ? onClose : undefined}
           >
             <item.icon className={`flex-shrink-0 w-5 h-5 mr-3 ${
-              isActive ? 'text-primary-600' : 'text-gray-500'
+              isActive ? 'text-green-700' : 'text-neutral-600 group-hover:text-green-600'
             }`} />
             <span>{item.name}</span>
           </Link>
@@ -117,16 +117,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onClose }) => {
   };
 
   return (
-    <div className={`${isMobile ? 'absolute inset-0 z-50 flex' : 'min-h-screen w-64 border-r border-gray-200'}`}>
-      <div className={`flex flex-col flex-1 bg-white ${isMobile ? 'w-full max-w-xs' : ''}`}>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+    <div className={`${isMobile ? 'absolute inset-0 z-50 flex' : 'min-h-screen w-64 border-r border-neutral-200'}`}>
+      <div className={`flex flex-col flex-1 bg-white shadow-md ${isMobile ? 'w-full max-w-xs' : ''}`}>
+        <div className="flex items-center justify-between h-16 px-4 border-b border-green-200 bg-white">
           <Link href="/dashboard" className="flex items-center">
-            <span className="text-xl font-bold text-primary-600">Food App</span>
+            <span className="text-xl font-bold text-green-700">HealthyBites</span>
           </Link>
           {isMobile && (
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 text-gray-500 rounded-md hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+              className="inline-flex items-center justify-center p-2 text-green-600 rounded-md hover:text-green-700 hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-600"
               onClick={onClose}
             >
               <span className="sr-only">Close sidebar</span>
@@ -144,22 +144,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onClose }) => {
         </div>
 
         {user && (
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-green-200 bg-white">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-800 font-medium">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center border border-green-200">
+                  <span className="text-green-800 font-medium">
                     {user.name ? user.name.substring(0, 1).toUpperCase() : 'U'}
                   </span>
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700 truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
+                <p className="text-sm font-medium text-neutral-700 truncate">{user?.name || 'User'}</p>
+                <p className="text-xs text-neutral-500 truncate">{user?.email || 'user@example.com'}</p>
               </div>
             </div>
             <button
-              className="flex items-center justify-center w-full px-4 py-2 mt-4 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex items-center justify-center w-full px-4 py-2 mt-4 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 shadow-sm"
               onClick={handleLogout}
             >
               <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
